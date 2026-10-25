@@ -21,6 +21,7 @@ jobs:
       # npm ci runs the `prepare` script, which builds dist/.
       - run: npm ci
       - run: npm run typecheck
+      - run: npm test
       - run: npm run build
       # Confirm the server boots and lists tools over stdio (no network calls).
       - run: |

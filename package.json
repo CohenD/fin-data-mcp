@@ -23,6 +23,7 @@
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
+    "test": "tsx --test scripts/*.test.ts",
     "prepare": "npm run build",
     "smoke": "tsx scripts/smoke-full.ts",
     "inspect": "npx @modelcontextprotocol/inspector tsx src/index.ts"

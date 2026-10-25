@@ -13,6 +13,9 @@ export interface HttpGetOptions {
 }
 
 export class HttpError extends Error {
+  /** Provider-specific guidance safe to show to the MCP client. */
+  hint?: string;
+
   constructor(
     public status: number,
     public url: string,
@@ -47,7 +50,7 @@ export function formatHttpError(err: unknown): string {
       case 401:
         return `Unauthorized ${tag} — this endpoint now requires auth or a crumb/token.`;
       case 403:
-        return `Forbidden ${tag} — blocked by the source (missing API key, required User-Agent, or IP restriction).`;
+        return `Forbidden ${tag} — the provider refused the request; the response does not establish why.${err.hint ? ` ${err.hint}` : ""}`;
       case 404:
         return `Not found ${tag} — verify the identifier (ticker/CIK/instId/series/slug).`;
       case 429:

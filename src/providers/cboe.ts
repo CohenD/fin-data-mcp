@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { httpGet } from "../lib/http.js";
+import { HttpError, httpGet } from "../lib/http.js";
 import { cached } from "../lib/cache.js";
 import { tool } from "../lib/tool.js";
 
@@ -16,6 +16,21 @@ const BASE = "https://cdn.cboe.com/api/global/delayed_quotes";
 
 function normalizeSymbol(symbol: string): string {
   return symbol.trim().toUpperCase();
+}
+
+async function cboeGet(path: string, symbol: string, alternative: string) {
+  const ticker = normalizeSymbol(symbol);
+  try {
+    return await httpGet(`${BASE}/${path}/${ticker}.json`);
+  } catch (err) {
+    if (err instanceof HttpError && err.status === 403) {
+      err.hint =
+        `Cboe returned no market data for symbol ${JSON.stringify(ticker)}. ` +
+        `Symbols can differ between providers. Use yahoo_search to find the ` +
+        `matching Yahoo symbol, then try ${alternative}.`;
+    }
+    throw err;
+  }
 }
 
 export const cboeTools = [
@@ -37,7 +52,7 @@ export const cboeTools = [
     },
     handler: ({ symbol }) =>
       cached(`cboe:quote:${normalizeSymbol(symbol)}`, () =>
-        httpGet(`${BASE}/quotes/${normalizeSymbol(symbol)}.json`),
+        cboeGet("quotes", symbol, "yahoo_quote"),
       ),
   }),
 
@@ -59,7 +74,7 @@ export const cboeTools = [
     handler: ({ symbol }) =>
       cached(
         `cboe:hist:${normalizeSymbol(symbol)}`,
-        () => httpGet(`${BASE}/charts/historical/${normalizeSymbol(symbol)}.json`),
+        () => cboeGet("charts/historical", symbol, "yahoo_chart"),
         15 * 60 * 1000,
       ),
   }),
@@ -80,7 +95,7 @@ export const cboeTools = [
     handler: ({ symbol }) =>
       cached(
         `cboe:opt:${normalizeSymbol(symbol)}`,
-        () => httpGet(`${BASE}/options/${normalizeSymbol(symbol)}.json`),
+        () => cboeGet("options", symbol, "yahoo_options_chain"),
         5 * 60 * 1000,
       ),
   }),
